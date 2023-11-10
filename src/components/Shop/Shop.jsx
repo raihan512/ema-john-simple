@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import "./Shop.css";
 import Product from "../Product/Product";
+import Cart from "../Cart/Cart";
+import { addToDb, getShoppingCart } from "../../Database/DataBase";
 
 const Shop = () => {
   const [products, setProducts] = useState([]);
@@ -14,8 +16,36 @@ const Shop = () => {
       });
   }, []);
 
+  useEffect(() => {
+    let addedToCart = getShoppingCart();
+    const savedCart = [];
+
+    for (let id in addedToCart) {
+      const addedProduct = products.find((product) => product.id === id);
+      if (addedProduct) {
+        const quantity = addedToCart[id];
+        addedProduct.quantity = quantity;
+        savedCart.push(addedProduct);
+      }
+    }
+    setCart(savedCart);
+  }, [products]);
+
   const handleAddCart = (product) => {
-    setCart([...cart, product]);
+    let newCart = [];
+    const exist = cart.find((cartItem) => cartItem.id === product.id);
+    if (!exist) {
+      product.quantity = 1;
+      newCart = [...cart, product];
+    } else {
+      const reaminingProduct = cart.filter(
+        (cartItem) => cartItem.id !== product.id
+      );
+      product.quantity = product.quantity + 1;
+      newCart = [...reaminingProduct, product];
+    }
+    setCart(newCart);
+    addToDb(product.id);
   };
 
   return (
@@ -34,10 +64,8 @@ const Shop = () => {
         </div>
       </div>
       <div className="cart-container">
-        <h3>Order Summary</h3>
-        <p>{cart.length} Product Added</p>
+        <Cart cart={cart}></Cart>
       </div>
-      <p>{products.length}</p>
     </div>
   );
 };
